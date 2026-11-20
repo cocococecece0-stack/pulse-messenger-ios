@@ -13,7 +13,7 @@ targets:
       - path: Sources
       - path: Assets.xcassets
     dependencies:
-      - framework: WebKit.framework
+      - sdk: WebKit.framework
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.efremov.pulsemessenger
       PRODUCT_NAME: PulseMessenger
