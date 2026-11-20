@@ -1,0 +1,108 @@
+name: Build unsigned IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build unsigned IPA
+    runs-on: macos-26-intel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: |
+          set -euo pipefail
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+
+      - name: Generate Xcode project
+        run: |
+          set -euo pipefail
+          xcodegen generate --spec project.yml
+          xcodebuild -list -project PulseMessenger.xcodeproj | head -40
+
+      - name: Build unsigned archive
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          xcodebuild \
+            -project PulseMessenger.xcodeproj \
+            -scheme PulseMessenger \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$PWD/build/Pulse.xcarchive" \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM= \
+            PROVISIONING_PROFILE_SPECIFIER= \
+            archive 2>&1 | tee "$RUNNER_TEMP/xcodebuild.log"
+          APP="$(find "$PWD/build/Pulse.xcarchive/Products/Applications" -maxdepth 1 -type d -name '*.app' | head -n 1)"
+          if [ -z "$APP" ]; then
+            echo "::error::В .xcarchive нет .app"
+            tail -n 120 "$RUNNER_TEMP/xcodebuild.log" || true
+            exit 1
+          fi
+          echo "APP_PATH=$APP" >> "$GITHUB_ENV"
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          APP_PATH="${{ env.APP_PATH }}"
+          find "$APP_PATH" -type f -name 'embedded.mobileprovision' -delete
+          rm -rf "$APP_PATH/_CodeSignature"
+          rm -rf build/Payload build/Pulse-Messenger-unsigned.ipa
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
+          ( cd build && zip -qry Pulse-Messenger-unsigned.ipa Payload )
+          ls -lh build/Pulse-Messenger-unsigned.ipa
+
+      - name: Verify artifact
+        run: |
+          set -euo pipefail
+          IPA="build/Pulse-Messenger-unsigned.ipa"
+          if unzip -l "$IPA" | grep -Eq 'embedded\.mobileprovision|_CodeSignature'; then
+            echo "::error::В IPA обнаружен профиль или подпись"
+            exit 1
+          fi
+          BUNDLE_ID="$(plutil -extract CFBundleIdentifier raw -o - build/Payload/*.app/Info.plist)"
+          if [ "$BUNDLE_ID" != "com.efremov.pulsemessenger" ]; then
+            echo "::error::Неверный Bundle ID: $BUNDLE_ID"
+            exit 1
+          fi
+          EXEC="$(find build/Payload -maxdepth 2 -type f -perm -111 | head -n 1)"
+          file "$EXEC" | grep -q 'Mach-O' || { echo "::error::Не Mach-O"; exit 1; }
+          echo "OK: unsigned, $BUNDLE_ID"
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pulse-Messenger-unsigned-IPA
+          path: build/Pulse-Messenger-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="v${GITHUB_RUN_NUMBER}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release delete "$TAG" --yes
+          fi
+          gh release create "$TAG" build/Pulse-Messenger-unsigned.ipa \
+            --title "ПУЛЬС — Мессенджер — $TAG" \
+            --notes "Нативный iOS-мессенджер на Swift/UIKit. Unsigned IPA, iOS 15+, Bundle ID com.efremov.pulsemessenger. Установка через AltStore / Sideloadly / Xcode."

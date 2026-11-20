@@ -1,0 +1,30 @@
+name: PulseMessenger
+
+options:
+  deploymentTarget:
+    iOS: "15.0"
+  projectVersion: "1.0"
+
+targets:
+  PulseMessenger:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Assets.xcassets
+    dependencies:
+      - framework: WebKit.framework
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.efremov.pulsemessenger
+      PRODUCT_NAME: PulseMessenger
+      INFOPLIST_FILE: Info.plist
+      GENERATE_INFOPLIST_FILE: "NO"
+      SWIFT_VERSION: "5.0"
+      IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+      TARGETED_DEVICE_FAMILY: "1"
+      CODE_SIGN_STYLE: Manual
+      CODE_SIGNING_ALLOWED: "NO"
+      CODE_SIGNING_REQUIRED: "NO"
+      DEVELOPMENT_TEAM: ""
+      PROVISIONING_PROFILE_SPECIFIER: ""
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
