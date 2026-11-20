@@ -147,7 +147,7 @@ final class StoryViewerViewController: UIViewController {
             replyField.heightAnchor.constraint(equalToConstant: 44)
         ])
 
-        let leftTap = UITapGestureRecognizer(target: self, action: #selector(previous))
+        let leftTap = UITapGestureRecognizer(target: self, action: #selector(rewindStory))
         leftTap.numberOfTapsRequired = 1
         let leftZone = UIView()
         leftZone.backgroundColor = .clear
@@ -156,7 +156,7 @@ final class StoryViewerViewController: UIViewController {
         leftZone.translatesAutoresizingMaskIntoConstraints = false
         view.insertSubview(leftZone, at: 1)
 
-        let rightTap = UITapGestureRecognizer(target: self, action: #selector(next))
+        let rightTap = UITapGestureRecognizer(target: self, action: #selector(advanceStory))
         let rightZone = UIView()
         rightZone.backgroundColor = .clear
         rightZone.addGestureRecognizer(rightTap)
@@ -212,7 +212,7 @@ final class StoryViewerViewController: UIViewController {
         }
 
         Storage.shared.update { s in
-            if let target = s.stories.first(where: { $0.id == story.id }) { target.seen = true }
+            if let i = s.stories.firstIndex(where: { $0.id == story.id }) { s.stories[i].seen = true }
         }
 
         progress = 0
@@ -226,14 +226,14 @@ final class StoryViewerViewController: UIViewController {
         if index < progressFills.count {
             progressFills[index].transform = CGAffineTransform(scaleX: progress, y: 1)
         }
-        if progress >= 1 { next() }
+        if progress >= 1 { advanceStory() }
     }
 
-    @objc private func next() {
+    @objc private func advanceStory() {
         if index + 1 < stories.count { show(index + 1) } else { close() }
     }
 
-    @objc private func previous() {
+    @objc private func rewindStory() {
         if index > 0 { show(index - 1) } else { progress = 0 }
     }
 

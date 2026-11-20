@@ -32,7 +32,6 @@ final class ChatViewController: UIViewController, UITableViewDataSource, UITable
         }
         buildTitle()
         buildTable()
-        buildInput()
         reload(animated: false)
         applyStyle()
         NotificationCenter.default.addObserver(self, selector: #selector(applyStyle),

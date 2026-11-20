@@ -40,7 +40,6 @@ final class AvatarFactory {
     static func gradientImage(seed: Int, size: CGSize) -> UIImage {
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { ctx in
-            let rect = CGRect(origin: .zero, size: size)
             let h1 = CGFloat(seed % 360) / 360
             let h2 = CGFloat((seed * 53 + 40) % 360) / 360
             let c1 = UIColor(hue: h1, saturation: 0.85, brightness: 0.85, alpha: 1).cgColor

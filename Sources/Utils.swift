@@ -56,7 +56,7 @@ extension Date {
 
 extension String {
     var initials: String {
-        let parts = splitting(separator: " ").filter { !$0.isEmpty }
+        let parts = split(separator: " ").filter { !$0.isEmpty }
         let letters = parts.prefix(2).compactMap { $0.first }.map { String($0).uppercased() }
         return letters.joined()
     }

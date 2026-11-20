@@ -1,5 +1,5 @@
-
 import Foundation
+import UIKit
 import UserNotifications
 
 final class NotificationService {
@@ -13,7 +13,7 @@ final class NotificationService {
         guard Storage.shared.state.notificationsOn else { return }
         let content = UNMutableNotificationContent()
         content.title = "ПУЛЬС"
-        content.body = "Марина: Привет! Ты видел neue сообщение? 👋"
+        content.body = "Марина: Привет! Ты видел новое сообщение? 👋"
         content.sound = .default
         content.badge = 1
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 15, repeats: false)
@@ -22,6 +22,8 @@ final class NotificationService {
     }
 
     func clearBadge() {
-        UNUserNotificationCenter.current().setBadgeCount(0) { _ in }
+        DispatchQueue.main.async {
+            UIApplication.shared.applicationIconBadgeNumber = 0
+        }
     }
 }

@@ -128,7 +128,7 @@ final class StatsViewController: UIViewController {
                 let current = points[i]
                 let previous = points[i - 1]
                 let mid = CGPoint(x: (current.x + previous.x) / 2, y: (current.y + previous.y) / 2)
-                line.addQuadCurve(to: mid, control: previous)
+                line.addQuadCurve(to: mid, controlPoint: previous)
             }
             line.lineWidth = 4
             line.lineCapStyle = .round
